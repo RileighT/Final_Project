@@ -57,8 +57,9 @@ class DataHandler:
     - calculate_save_percentage(goalies): Calculates save percentage for each goalie.
     - top_goalies_by_save_percentage(goalies, num_goalies=5): Returns the top goalies based on save percentage.
     """
-
-    def read_skaters_data(file_path):
+    def __init__(self):
+        pass
+    def read_skaters_data(self,file_path):
         """
         Reads skaters data from a CSV file.
 
@@ -71,7 +72,7 @@ class DataHandler:
         skaters = pd.read_csv(file_path)
         return skaters
 
-    def filter_skaters_by_position(skaters, position):
+    def filter_skaters_by_position(self, skaters, position):
         """
         Filters skaters based on their playing position.
 
@@ -84,7 +85,7 @@ class DataHandler:
         """
         return skaters[skaters['Pos'] == position]
 
-    def calculate_points(skaters):
+    def calculate_points(self,skaters):
         """
         Calculates total points for each skater.
 
@@ -97,7 +98,7 @@ class DataHandler:
         skaters['Points'] = skaters['G'] + skaters['A']
         return skaters[['Player Name', 'Points']]
 
-    def top_players_by_points(skaters, num_players=5):
+    def top_players_by_points(self,skaters, num_players=5):
         """
         Returns the top players based on points.
 
@@ -111,7 +112,7 @@ class DataHandler:
         sorted_skaters = skaters.sort_values(by='Points', ascending=False)
         return sorted_skaters.head(num_players)
 
-    def read_goalies_data(file_path):
+    def read_goalies_data(self,file_path):
         """
         Reads goalies data from a CSV file.
 
@@ -124,7 +125,7 @@ class DataHandler:
         goalies = pd.read_csv(file_path)
         return goalies
 
-    def calculate_save_percentage(goalies):
+    def calculate_save_percentage(self,goalies):
         """
         Calculates save percentage for each goalie.
 
@@ -137,7 +138,7 @@ class DataHandler:
         goalies['SavePercentage'] = goalies['SV'] / goalies['SA']
         return goalies[['Player Name', 'SavePercentage']]
 
-    def top_goalies_by_save_percentage(goalies, num_goalies=5):
+    def top_goalies_by_save_percentage(self,goalies, num_goalies=5):
         """
         Returns the top goalies based on save percentage.
 
@@ -189,7 +190,7 @@ class Analyzer:
     - analyze_goalies(goalies_data): Analyzes goalies' data and returns the top goalies.
     """
 
-    def analyze_skaters(skaters_data):
+    def analyze_skaters(self,skaters_data):
         """
         Analyzes the skaters data and returns the top forwards.
 
@@ -199,15 +200,12 @@ class Analyzer:
         Returns:
         The top forwards based on Goals percentage.
         """
-        # Reading skaters' data from the CSV file
         skaters_df = DataHandler.read_skaters_data(skaters_data)
-        # Filtering skaters by position (forward)
         forwards = DataHandler.filter_skaters_by_position(skaters_df, 'Forward')
-        # Finding the top forwards based on Goals percentage
         top_forwards = DataHandler.top_players_by_xGoals_percentage(forwards, num_players=5)
         return top_forwards
 
-    def analyze_goalies(goalies_data):
+    def analyze_goalies(self,goalies_data):
         """
         Analyzes the goalies data and returns the top goalies.
 
@@ -288,6 +286,17 @@ class TestAnalyzer(unittest.TestCase):
         unique_teams = Analyzer.unique_teams(players)
         self.assertEqual(len(unique_teams), 2)
 
+    def analyze_skaters(self, skaters_data):
+            skaters_df = DataHandler.read_skaters_data(skaters_data)
+            forwards = DataHandler.filter_skaters_by_position(skaters_df, 'Forward')
+            top_forwards = DataHandler.top_players_by_points(forwards, num_players=5)
+            return top_forwards
+
+    def analyze_goalies(self, goalies_data):
+        goalies_df = DataHandler.read_goalies_data(goalies_data)
+        top_goalies = DataHandler.top_goalies_by_save_percentage(goalies_df, num_goalies=3)
+        return top_goalies
+
 #module 7
 class Goalie(Player):
     def __init__(self, name, country, saves, goals_allowed):
@@ -298,7 +307,7 @@ class Goalie(Player):
 #module 8
 class DataHandler:
 
-    def extract_country_code(player_info):
+    def extract_team_code(player_info):
         match = re.search(r'\(([A-Z]+)\)', player_info)
         if match:
             return match.group(1)
@@ -326,9 +335,9 @@ class DataHandler:
         conn.commit()
         conn.close()
 
-def goal_scorers_analysis(skaters_data):
-    skaters_df = DataHandler.read_skaters_data(skaters_data)
-    top_scorers = DataHandler.top_players_by_points(skaters_df, num_players=10)
+def goal_scorers_analysis(data_handler,skaters_data):
+    skaters_df = data_handler.read_skaters_data(skaters_data)
+    top_scorers = data_handler.top_players_by_points(skaters_df, num_players=10)
     print("\nTop Goal Scorers:")
     print(top_scorers)
 
@@ -369,19 +378,20 @@ def main():
     skaters_data = 'data/nhl-stats_1.csv'
     goalies_data = 'data/nhl-stats_2.csv'
 
+    data_handler = DataHandler()
     print("Welcome to the NHL Data Analysis!")
     user_choice = input("What would you like to analyze? (top goal scorers/best goalies/players by team/biggest hitters/highest penalty minutes): ").lower()
 
     if user_choice == "top goal scorers":
-        skaters_analysis(skaters_data)
+        goal_scorers_analysis(data_handler, skaters_data)
     elif user_choice == "best goalies":
-        goalies_analysis(goalies_data)
+        goalies_analysis(data_handler, goalies_data)
     elif user_choice == "players by team":
-        team_analysis(skaters_data, goalies_data)
+        team_analysis(data_handler, skaters_data, goalies_data)
     elif user_choice == "biggest hitters":
-        hitters_analysis(skaters_data)
+        hitters_analysis(data_handler, skaters_data)
     elif user_choice == "highest penalty minutes":
-        penalty_minutes_analysis(skaters_data)
+        penalty_minutes_analysis(data_handler, skaters_data)
     else:
         print("Invalid choice. Please select a valid option.")
 
