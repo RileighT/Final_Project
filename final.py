@@ -1,4 +1,7 @@
-#put imports here
+import pandas as pd 
+import unittest
+import re
+import sqlite3
 
 #module 1
 class Player:
@@ -38,8 +41,6 @@ class Team:
         self.players = players
  
 #module 2
-import pandas as pd
-
 class DataHandler:
     """
     A class for handling NHL player data, including skaters and goalies.
@@ -151,8 +152,6 @@ class DataHandler:
         return sorted_goalies.head(num_goalies)
 
 #module 3
-import unittest
-
 class TestDataHandler(unittest.TestCase):
     """
     Unit tests for the DataHandler class.
@@ -225,8 +224,6 @@ class Analyzer:
         return top_goalies
 
 #module 5
-import unittest
-
 class TestAnalyzer(unittest.TestCase):
     """
     Unit tests for the Analyzer class.
@@ -299,7 +296,6 @@ class Goalie(Player):
         self.goals_allowed = goals_allowed
 
 #module 8
-import re
 class DataHandler:
 
     def extract_country_code(player_info):
@@ -311,18 +307,12 @@ class DataHandler:
 #module 9 - GIT Hub
 
 #module 10
-
-import pandas as pd
-
 class DataHandler:
     def create_dataframe(players):
         return pd.DataFrame(players)
 
 
 #module 11
-
-import sqlite3
-
 class DataHandler:
     def create_database(players):
         conn = sqlite3.connect('nhl_players.db')
@@ -336,17 +326,71 @@ class DataHandler:
         conn.commit()
         conn.close()
 
-#module 12
+def goal_scorers_analysis(skaters_data):
+    skaters_df = DataHandler.read_skaters_data(skaters_data)
+    top_scorers = DataHandler.top_players_by_points(skaters_df, num_players=10)
+    print("\nTop Goal Scorers:")
+    print(top_scorers)
 
+def goalies_analysis(goalies_data):
+    goalies_df = DataHandler.read_goalies_data(goalies_data)
+    top_goalies = DataHandler.top_goalies_by_save_percentage(goalies_df, num_goalies=5)
+    print("\nTop Goalies:")
+    print(top_goalies)
+
+def team_analysis(skaters_data, goalies_data):
+    team_name = input("Enter the team name: ")
+    skaters_df = DataHandler.read_skaters_data(skaters_data)
+    goalies_df = DataHandler.read_goalies_data(goalies_data)
+    
+    team_players = DataHandler.filter_players_by_team(skaters_df, team_name)
+    team_goalies = DataHandler.filter_goalies_by_team(goalies_df, team_name)
+
+    print(f"\nPlayers from {team_name}:")
+    print(team_players)
+
+    print(f"\nGoalies from {team_name}:")
+    print(team_goalies)
+
+def hitters_analysis(skaters_data):
+    skaters_df = DataHandler.read_skaters_data(skaters_data)
+    top_hitters = DataHandler.top_players_by_stat(skaters_df, 'Hits', num_players=10)
+    print("\nTop Hitters:")
+    print(top_hitters)
+
+def penalty_minutes_analysis(skaters_data):
+    skaters_df = DataHandler.read_skaters_data(skaters_data)
+    top_penalty_minutes = DataHandler.top_players_by_stat(skaters_df, 'PIM', num_players=10)
+    print("\nPlayers with the Highest Penalty Minutes:")
+    print(top_penalty_minutes)
+
+#module 12
 def main():
     skaters_data = 'data/nhl-stats_1.csv'
     goalies_data = 'data/nhl-stats_2.csv'
 
-    print("Top Skaters:")
-  
+    print("Welcome to the NHL Data Analysis!")
+    user_choice = input("What would you like to analyze? (top goal scorers/best goalies/players by team/biggest hitters/highest penalty minutes): ").lower()
 
-    print("\nTop Goalies:")
+    if user_choice == "top goal scorers":
+        skaters_analysis(skaters_data)
+    elif user_choice == "best goalies":
+        goalies_analysis(goalies_data)
+    elif user_choice == "players by team":
+        team_analysis(skaters_data, goalies_data)
+    elif user_choice == "biggest hitters":
+        hitters_analysis(skaters_data)
+    elif user_choice == "highest penalty minutes":
+        penalty_minutes_analysis(skaters_data)
+    else:
+        print("Invalid choice. Please select a valid option.")
 
+def skaters_analysis(skaters_data):
+    skaters_df = DataHandler.read_skaters_data(skaters_data)
+    skaters_df['Points'] = skaters_df['G'] + skaters_df['A']
+    top_goal_scorers = skaters_df.sort_values(by='Points', ascending=False).head(10)
+    print("\nTop 10 Goal Scorers:")
+    print(top_goal_scorers[['Player Name', 'Points']])
 
 if __name__ == "__main__":
     main()
