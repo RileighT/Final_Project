@@ -2,6 +2,7 @@ import pandas as pd
 import unittest
 import re
 import sqlite3
+import argparse
 
 #module 1
 class Player:
@@ -313,13 +314,12 @@ class DataHandler:
             return match.group(1)
         return None
 
-#module 9 - GIT Hub
+#module 9 - GIT Hub. I am incoperating this module by uplaoding my progress and final into git hub
 
 #module 10
 class DataHandler:
     def create_dataframe(players):
         return pd.DataFrame(players)
-
 
 #module 11
 class DataHandler:
@@ -375,6 +375,12 @@ def penalty_minutes_analysis(skaters_data):
 
 #module 12
 def main():
+    parser = argparse.ArgumentParser(description="NHL Data Analysis")
+    parser.add_argument("analysis type", choices=["top goal scorers", "best goalies", "players by team", "biggest hitters", "highest penalty minutes"],
+                        help="Specify the type of analysis (top goal scorers, best goalies, players by team, biggest hitters, highest penalty minutes)")
+
+    args = parser.parse_args()
+
     skaters_data = 'data/nhl-stats_1.csv'
     goalies_data = 'data/nhl-stats_2.csv'
 
