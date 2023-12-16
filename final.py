@@ -376,7 +376,7 @@ def penalty_minutes_analysis(skaters_data):
 #module 12
 def main():
     parser = argparse.ArgumentParser(description="NHL Data Analysis")
-    parser.add_argument("analysis type", choices=["top goal scorers", "best goalies", "players by team", "biggest hitters", "highest penalty minutes"],
+    parser.add_argument("analysis type", choices=["-tgs", "-bg", "-pbt", "-bh", "-hpm"],
                         help="Specify the type of analysis (top goal scorers, best goalies, players by team, biggest hitters, highest penalty minutes)")
 
     args = parser.parse_args()
@@ -384,20 +384,16 @@ def main():
     skaters_data = 'data/nhl-stats_1.csv'
     goalies_data = 'data/nhl-stats_2.csv'
 
-    data_handler = DataHandler()
-    print("Welcome to the NHL Data Analysis!")
-    user_choice = input("What would you like to analyze? (top goal scorers/best goalies/players by team/biggest hitters/highest penalty minutes): ").lower()
-
-    if user_choice == "top goal scorers":
-        goal_scorers_analysis(data_handler, skaters_data)
-    elif user_choice == "best goalies":
-        goalies_analysis(data_handler, goalies_data)
-    elif user_choice == "players by team":
-        team_analysis(data_handler, skaters_data, goalies_data)
-    elif user_choice == "biggest hitters":
-        hitters_analysis(data_handler, skaters_data)
-    elif user_choice == "highest penalty minutes":
-        penalty_minutes_analysis(data_handler, skaters_data)
+    if args == "-tgs":
+        goal_scorers_analysis(skaters_data)
+    elif args == "-bg":
+        goalies_analysis(goalies_data)
+    elif args == "-pbt":
+        team_analysis(skaters_data, goalies_data)
+    elif args == "-bh":
+        hitters_analysis(skaters_data)
+    elif args == "-hpm":
+        penalty_minutes_analysis(skaters_data)
     else:
         print("Invalid choice. Please select a valid option.")
 
