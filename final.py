@@ -388,7 +388,7 @@ def parse_args():
 
 
 #module 12
-def main():
+if __name__ == "__main__":
     args = parse_args(sys.argv[1:])
 
     # create a pandas data frame for the skaters data
@@ -404,8 +404,7 @@ def main():
         num = args.bestgoalies[0]
         print(f"Processing Best {num} Goalies...")
         goalies_analysis(goalies_df)
+    
     else:
         print("Invalid choice. Please select a valid option.")
 
-if __name__ == "__main__":
-    main()
