@@ -373,27 +373,41 @@ def penalty_minutes_analysis(skaters_data):
     print("\nPlayers with the Highest Penalty Minutes:")
     print(top_penalty_minutes)
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="NHL Data Analysis Script")
+    parser.add_argument(
+        "--skaters_data",
+        help="Path to the CSV file containing skaters data",
+        default="data/nhl-stats_1.csv",)
+    parser.add_argument(
+        "--goalies_data",
+        help="Path to the CSV file containing goalies data",
+        default="data/nhl-stats_2.csv",)
+    parser.add_argument(
+        "--analysis_type",
+        help="Type of analysis (e.g., top_scorers, goalies_analysis)",
+        required=True,)
+    return parser.parse_args()
+
+
 #module 12
 def main():
-    parser = argparse.ArgumentParser(description="NHL Data Analysis")
-    parser.add_argument("analysis type", choices=["-tgs", "-bg", "-pbt", "-bh", "-hpm"],
-                        help="Specify the type of analysis (top goal scorers, best goalies, players by team, biggest hitters, highest penalty minutes)")
-
-    args = parser.parse_args()
+    args = parse_arguments()
+    data_handler = DataHandler()
 
     skaters_data = 'data/nhl-stats_1.csv'
     goalies_data = 'data/nhl-stats_2.csv'
 
-    if args == "-tgs":
-        goal_scorers_analysis(skaters_data)
-    elif args == "-bg":
-        goalies_analysis(goalies_data)
-    elif args == "-pbt":
-        team_analysis(skaters_data, goalies_data)
-    elif args == "-bh":
-        hitters_analysis(skaters_data)
-    elif args == "-hpm":
-        penalty_minutes_analysis(skaters_data)
+    if args.analysis_type == "top_scorers":
+        goal_scorers_analysis(data_handler, args.skaters_data)
+    elif args.analysis_type == "goalies_analysis":
+        goalies_analysis(data_handler, args.goalies_data)
+    elif args.analysis_type == "team_analysis":
+        team_analysis(data_handler, args.skaters_data, args.goalies_data)
+    elif args.analysis_type == "hitters_analysis":
+        hitters_analysis(data_handler, args.skaters_data)
+    elif args.analysis_type == "penalty_minutes_analysis":
+        penalty_minutes_analysis(data_handler, args.skaters_data)
     else:
         print("Invalid choice. Please select a valid option.")
 
