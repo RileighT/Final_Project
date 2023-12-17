@@ -111,7 +111,7 @@ class PlayerHandler:
         Returns:
         - The top players based on points.
         """
-        sorted_skaters = skaters.sort_values(by='Pts', ascending=False)
+        sorted_skaters = skaters.sort_values(by=['Pts', 'G'], ascending=[False, False])
         return sorted_skaters.head(num_players)
 
     def read_goalies_data(self,file_path):
@@ -339,8 +339,9 @@ class SQL:
 def goal_scorers_analysis(sdf, num):
     players=PlayerHandler()
     top_scorers = players.top_players_by_points(sdf,num)
+    sorted_top_scorers = top_scorers.sort_values(by='G', ascending=False)
     print(f"\nTop {num} Goal Scorers:")
-    print(top_scorers)
+    print(sorted_top_scorers[['Player Name', 'G']])
 
 def goalies_analysis(gdf, num):
     goalies = PlayerHandler()
@@ -380,11 +381,11 @@ def skaters_analysis(sdf):
     print("\nTop 10 Goal Scorers:")
     print(top_goal_scorers[['Player Name', 'Points']])
 
-def parse_args():
+def parse_args(arglist):
     parser = ArgumentParser(description="NHL Stats Analyzer")
     parser.add_argument('-tgs', '--topgoalscorers', nargs=1, type=int, help = "Show Top Goal Scorers (include n scorers)")
     parser.add_argument('-bg', '--bestgoalies', nargs=1, type=int, help = "Show Best Goalies (include n goalies)")
-    return parser.parse_args()
+    return parser.parse_args(arglist)
 
 
 #module 12
@@ -392,9 +393,9 @@ if __name__ == "__main__":
     args = parse_args(sys.argv[1:])
 
     # create a pandas data frame for the skaters data
-    skaters_df = pd.read_csv("data/nhl-stats_1.csv",skiprows=1)
+    skaters_df = pd.read_csv("nhl-stats_1.csv",skiprows=1)
     # create a pandas data frame for the goalies data
-    goalies_df = pd.read_csv("data/nhl-stats_2.csv",skiprows=1)
+    goalies_df = pd.read_csv("nhl-stats_2.csv",skiprows=1)
 
     if args.topgoalscorers:
         num = args.topgoalscorers[0]
