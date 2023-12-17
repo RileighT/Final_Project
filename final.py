@@ -2,7 +2,8 @@ import pandas as pd
 import unittest
 import re
 import sqlite3
-import argparse
+from argparse import ArgumentParser
+import sys
 
 #module 1
 class Player:
@@ -42,7 +43,7 @@ class Team:
         self.players = players
  
 #module 2
-class DataHandler:
+class PlayerHandler:
     """
     A class for handling NHL player data, including skaters and goalies.
 
@@ -110,7 +111,7 @@ class DataHandler:
         Returns:
         - The top players based on points.
         """
-        sorted_skaters = skaters.sort_values(by='Points', ascending=False)
+        sorted_skaters = skaters.sort_values(by='Pts', ascending=False)
         return sorted_skaters.head(num_players)
 
     def read_goalies_data(self,file_path):
@@ -150,7 +151,7 @@ class DataHandler:
         Returns:
         - The top goalies based on save percentage.
         """
-        sorted_goalies = goalies.sort_values(by='SavePercentage', ascending=False)
+        sorted_goalies = goalies.sort_values(by='SV%', ascending=False)
         return sorted_goalies.head(num_goalies)
 
 #module 3
@@ -270,7 +271,7 @@ class TestAnalyzer(unittest.TestCase):
 
 #module 6
 
-class TestAnalyzer(unittest.TestCase):
+class TestAnalyzer_2(unittest.TestCase):
 
     def test_sort_players_by_stat(self):
         players = [Player("Player1", "BOS", "Forward", 30, 40),
@@ -322,7 +323,7 @@ class DataHandler:
         return pd.DataFrame(players)
 
 #module 11
-class DataHandler:
+class SQL:
     def create_database(players):
         conn = sqlite3.connect('nhl_players.db')
         c = conn.cursor()
@@ -335,25 +336,23 @@ class DataHandler:
         conn.commit()
         conn.close()
 
-def goal_scorers_analysis(data_handler,skaters_data):
-    skaters_df = data_handler.read_skaters_data(skaters_data)
-    top_scorers = data_handler.top_players_by_points(skaters_df, num_players=10)
-    print("\nTop Goal Scorers:")
+def goal_scorers_analysis(sdf, num):
+    players=PlayerHandler()
+    top_scorers = players.top_players_by_points(sdf,num)
+    print(f"\nTop {num} Goal Scorers:")
     print(top_scorers)
 
-def goalies_analysis(goalies_data):
-    goalies_df = DataHandler.read_goalies_data(goalies_data)
-    top_goalies = DataHandler.top_goalies_by_save_percentage(goalies_df, num_goalies=5)
-    print("\nTop Goalies:")
+def goalies_analysis(gdf, num):
+    goalies = PlayerHandler()
+    top_goalies = goalies.top_goalies_by_save_percentage(gdf, num)
+    print(f"\nTop {num} Goalies:")
     print(top_goalies)
 
-def team_analysis(skaters_data, goalies_data):
+def team_analysis(sdf, gdf):
+    team = PlayerHandler()
     team_name = input("Enter the team name: ")
-    skaters_df = DataHandler.read_skaters_data(skaters_data)
-    goalies_df = DataHandler.read_goalies_data(goalies_data)
-    
-    team_players = DataHandler.filter_players_by_team(skaters_df, team_name)
-    team_goalies = DataHandler.filter_goalies_by_team(goalies_df, team_name)
+    team_players = team.filter_players_by_team(sdf, team_name)
+    team_goalies = team.filter_goalies_by_team(gdf, team_name)
 
     print(f"\nPlayers from {team_name}:")
     print(team_players)
@@ -361,62 +360,52 @@ def team_analysis(skaters_data, goalies_data):
     print(f"\nGoalies from {team_name}:")
     print(team_goalies)
 
-def hitters_analysis(skaters_data):
-    skaters_df = DataHandler.read_skaters_data(skaters_data)
-    top_hitters = DataHandler.top_players_by_stat(skaters_df, 'Hits', num_players=10)
+def hitters_analysis(sdf):
+    hitters = PlayerHandler()
+    top_hitters = hitters.top_players_by_stat(sdf, 'Hits', num_players=10)
     print("\nTop Hitters:")
     print(top_hitters)
 
-def penalty_minutes_analysis(skaters_data):
-    skaters_df = DataHandler.read_skaters_data(skaters_data)
-    top_penalty_minutes = DataHandler.top_players_by_stat(skaters_df, 'PIM', num_players=10)
+def penalty_minutes_analysis(sdf):
+    penalty = PlayerHandler()
+    top_penalty_minutes = penalty.top_players_by_stat(sdf, 'PIM', num_players=10)
     print("\nPlayers with the Highest Penalty Minutes:")
     print(top_penalty_minutes)
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="NHL Data Analysis Script")
-    parser.add_argument(
-        "--skaters_data",
-        help="Path to the CSV file containing skaters data",
-        default="data/nhl-stats_1.csv",)
-    parser.add_argument(
-        "--goalies_data",
-        help="Path to the CSV file containing goalies data",
-        default="data/nhl-stats_2.csv",)
-    parser.add_argument(
-        "--analysis_type",
-        help="Type of analysis (e.g., top_scorers, goalies_analysis)",
-        required=True,)
+def skaters_analysis(sdf):
+    skaters = PlayerHandler()
+    skaters_df = sdf.copy()
+    skaters_df['Points'] = skaters_df['G'] + skaters_df['A']
+    top_goal_scorers = skaters_df.sort_values(by='Points', ascending=False).head(10)
+    print("\nTop 10 Goal Scorers:")
+    print(top_goal_scorers[['Player Name', 'Points']])
+
+def parse_args():
+    parser = ArgumentParser(description="NHL Stats Analyzer")
+    parser.add_argument('-tgs', '--topgoalscorers', nargs=1, type=int, help = "Show Top Goal Scorers (include n scorers)")
+    parser.add_argument('-bg', '--bestgoalies', nargs=1, type=int, help = "Show Best Goalies (include n goalies)")
     return parser.parse_args()
 
 
 #module 12
 def main():
-    args = parse_arguments()
-    data_handler = DataHandler()
+    args = parse_args(sys.argv[1:])
 
-    skaters_data = 'data/nhl-stats_1.csv'
-    goalies_data = 'data/nhl-stats_2.csv'
+    # create a pandas data frame for the skaters data
+    skaters_df = pd.read_csv("data/nhl-stats_1.csv",skiprows=1)
+    # create a pandas data frame for the goalies data
+    goalies_df = pd.read_csv("data/nhl-stats_2.csv",skiprows=1)
 
-    if args.analysis_type == "top_scorers":
-        goal_scorers_analysis(data_handler, args.skaters_data)
-    elif args.analysis_type == "goalies_analysis":
-        goalies_analysis(data_handler, args.goalies_data)
-    elif args.analysis_type == "team_analysis":
-        team_analysis(data_handler, args.skaters_data, args.goalies_data)
-    elif args.analysis_type == "hitters_analysis":
-        hitters_analysis(data_handler, args.skaters_data)
-    elif args.analysis_type == "penalty_minutes_analysis":
-        penalty_minutes_analysis(data_handler, args.skaters_data)
+    if args.topgoalscorers:
+        num = args.topgoalscorers[0]
+        print(f"Processing Top {num} Goal Scorers...")
+        goal_scorers_analysis(skaters_df, num)
+    elif args.bestgoalies:
+        num = args.bestgoalies[0]
+        print(f"Processing Best {num} Goalies...")
+        goalies_analysis(goalies_df)
     else:
         print("Invalid choice. Please select a valid option.")
-
-def skaters_analysis(skaters_data):
-    skaters_df = DataHandler.read_skaters_data(skaters_data)
-    skaters_df['Points'] = skaters_df['G'] + skaters_df['A']
-    top_goal_scorers = skaters_df.sort_values(by='Points', ascending=False).head(10)
-    print("\nTop 10 Goal Scorers:")
-    print(top_goal_scorers[['Player Name', 'Points']])
 
 if __name__ == "__main__":
     main()
