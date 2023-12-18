@@ -1,11 +1,18 @@
 import pandas as pd 
-import unittest
 import re
 import sqlite3
 from argparse import ArgumentParser
 import sys
 
-#module 1
+# Dictionary mapping team codes to team names
+nhl_teams = {"ANH":"Anaheim Ducks","ARI":"Arizona Coyotes","BOS":"Boston Bruins","BUF":"Buffalo Sabres","CGY":"Calgary Flames",\
+        "CAR":"Carolina Hurricanes","CHI":"Chicago Blackhawks","COL":"Colorado Avalanche","CLS":"Columbus Blue Jackets",\
+        "DAL":"Dallas Stars","DET":"Detroit Red Wings","EDM":"Edmonton Oilers","FLA":"Florida Panthers","LA":"Los Angeles Kings",\
+        "MIN":"Minnesota Wild","MON":"Montreal Canadiens","NSH":"Nashville Predators","NJ":"New Jersey Devils","NYI":"New York Islanders",\
+        "NYR":"New York Rangers","OTT":"Ottawa Senators","PHI":"Philadelphia Flyers","PIT":"Pittsburgh Penguins","SJ":"San Jose Sharks",\
+        "SEA":"Seattle Kraken","STL":"St. Louis Blues","TB":"Tampa Bay Lightning","TOR":"Toronto Maple Leafs","VAN":"Vancouver Canucks",\
+        "VGK":"Vegas Golden Knights","WAS":"Washington Capitals","WPG":"Winnipeg Jets"}
+
 class Player:
     """
     A class that represents an NHL player.
@@ -42,7 +49,7 @@ class Team:
         self.name = name
         self.players = players
  
-#module 2
+
 class PlayerHandler:
     """
     A class for handling NHL player data, including skaters and goalies.
@@ -85,22 +92,10 @@ class PlayerHandler:
         Returns:
         - A filtered DataFrame containing skaters with the specified position.
         """
+        # Using boolean indexing to filter skaters based on the specified position
         return skaters[skaters['Pos'] == position]
 
-    def calculate_points(self,skaters):
-        """
-        Calculates total points for each skater.
-
-        Parameters:
-        - skaters (pandas.DataFrame): DataFrame containing skaters data.
-
-        Returns:
-        - A DataFrame with an additional 'Points' column representing total points.
-        """
-        skaters['Points'] = skaters['G'] + skaters['A']
-        return skaters[['Player Name', 'Points']]
-
-    def top_players_by_points(self,skaters, num_players=5):
+    def top_players_by_goals(self,skaters, num_players=5):
         """
         Returns the top players based on points.
 
@@ -111,7 +106,9 @@ class PlayerHandler:
         Returns:
         - The top players based on points.
         """
-        sorted_skaters = skaters.sort_values(by=['Pts', 'G'], ascending=[False, False])
+        # Sort skaters DataFrame by the 'G' (goals) column in descending order
+        sorted_skaters = skaters.sort_values(by=['G'], ascending=[False])
+        # Return the first 'num_players' rows from the sorted DataFrame
         return sorted_skaters.head(num_players)
 
     def read_goalies_data(self,file_path):
@@ -137,7 +134,9 @@ class PlayerHandler:
         Returns:
         - A DataFrame with an additional 'Save Percentage' column.
         """
+        # Calculate save percentage by dividing 'SV' (saves) by 'SA' (shots against)
         goalies['SavePercentage'] = goalies['SV'] / goalies['SA']
+        # Return a DataFrame with 'Player Name' and 'Save Percentage' columns
         return goalies[['Player Name', 'SavePercentage']]
 
     def top_goalies_by_save_percentage(self,goalies, num_goalies=5):
@@ -151,252 +150,310 @@ class PlayerHandler:
         Returns:
         - The top goalies based on save percentage.
         """
+        # Sort the goalies DataFrame by 'SV%' (save percentage) in descending order
         sorted_goalies = goalies.sort_values(by='SV%', ascending=False)
+        # Return the top 'num_goalies' goalies from the sorted DataFrame
         return sorted_goalies.head(num_goalies)
-
-#module 3
-class TestDataHandler(unittest.TestCase):
-    """
-    Unit tests for the DataHandler class.
-
-    Attributes:
-    None
-
-    Methods:
-    - test_read_skaters_data(): Tests the read_skaters_data method of the DataHandler class.
-    """
-    def test_read_skaters_data(self):
+    
+    def top_players_by_hits(self, skaters, num_players=10):
         """
-        Tests the read_skaters_data method of the DataHandler class.
-
-        The test checks if the read_skaters_data method reads skaters data from a CSV file
-        and returns a DataFrame with a length greater than 0.
-
-        Returns:
-        None
-        """
-        file_path = 'data/nhl-stats_1.csv'
-        skaters = DataHandler.read_skaters_data(file_path)
-        self.assertGreater(len(skaters), 0)
-
-#module 4
-class Analyzer:
-    """
-    A class for analyzing NHL player data, including skaters and goalies.
-
-    Attributes:
-    None
-
-    Methods:
-    - analyze_skaters(skaters_data): Analyzes skaters' data and returns the top forwards.
-    - analyze_goalies(goalies_data): Analyzes goalies' data and returns the top goalies.
-    """
-
-    def analyze_skaters(self,skaters_data):
-        """
-        Analyzes the skaters data and returns the top forwards.
+        Returns the top players based on hits.
 
         Parameters:
-        - skaters_data (str): File path to the skaters' data CSV file.
+        - skaters (pandas.DataFrame): DataFrame containing skaters data.
+        - num_players (int): The number of top players to return.
 
         Returns:
-        The top forwards based on Goals percentage.
+        - A DataFrame with the top players based on hits.
         """
-        skaters_df = DataHandler.read_skaters_data(skaters_data)
-        forwards = DataHandler.filter_skaters_by_position(skaters_df, 'Forward')
-        top_forwards = DataHandler.top_players_by_xGoals_percentage(forwards, num_players=5)
-        return top_forwards
+        # Sort skaters DataFrame by 'Hits' column in descending order
+        sorted_skaters = skaters.sort_values(by='Hits', ascending=False)
+        # Return the top 'num_players' players based on hits
+        return sorted_skaters.head(num_players)
 
-    def analyze_goalies(self,goalies_data):
+    def top_players_by_pim(self, skaters, num_players=10):
         """
-        Analyzes the goalies data and returns the top goalies.
+        Returns the top players based on penalty minutes.
 
         Parameters:
-        - goalies_data (str): File path to the goalies' data CSV file.
+        - skaters (pandas.DataFrame): DataFrame containing skaters data.
+        - num_players (int): The number of top players to return.
 
         Returns:
-        Top goalies based on save percentage.
+        - A DataFrame with the top players based on penalty minutes.
         """
-        # Reading goalies data from the CSV file
-        goalies_df = DataHandler.read_goalies_data(goalies_data)
-        # Finding the top goalies based on save percentage
-        top_goalies = DataHandler.top_goalies_by_save_percentage(goalies_df, num_goalies=3)
-        return top_goalies
+        # Sort skaters DataFrame by 'PIM' (Penalty Minutes) column in descending order
+        sorted_skaters = skaters.sort_values(by='PIM', ascending=False)
+        # Return the top 'num_players' players based on penalty minutes
+        return sorted_skaters.head(num_players)
 
-#module 5
-class TestAnalyzer(unittest.TestCase):
-    """
-    Unit tests for the Analyzer class.
 
-    Attributes:
-    None
-
-    Methods:
-    - test_analyze_skaters(): Tests the analyze_skaters method of the Analyzer class.
-    - test_analyze_goalies(): Tests the analyze_goalies method of the Analyzer class.
-    """
-    def test_analyze_skaters(self):
-        """
-        Tests the analyze_skaters method of the Analyzer class.
-
-        The test checks if the analyze_skaters method correctly analyzes skaters' data
-        and returns the expected number of top forwards.
-
-        Returns:
-        None
-        """
-        # File path to the skaters' data CSV file
-        skaters_data = 'data/nhl-stats_1.csv'
-        # Calling the analyze_skaters method to analyze skaters' data
-        result = Analyzer.analyze_skaters(skaters_data)
-        # Assertion: Check if the length of the result is equal to 5
-        self.assertEqual(len(result), 5)
-
-    def test_analyze_goalies(self):
-        """
-        Tests the analyze_goalies method of the Analyzer class.
-
-        The test checks if the analyze_goalies method correctly analyzes goalies' data
-        and returns the expected number of top goalies.
-
-        Returns:
-        None
-        """
-        # File path to the goalies' data CSV file
-        goalies_data = 'data/nhl-stats_2.csv'
-        # Calling the analyze_goalies method to analyze goalies' data
-        result = Analyzer.analyze_goalies(goalies_data)
-        # Check if the length of the result is equal to 3
-        self.assertEqual(len(result), 3)
-
-#module 6
-
-class TestAnalyzer_2(unittest.TestCase):
-
-    def test_sort_players_by_stat(self):
-        players = [Player("Player1", "BOS", "Forward", 30, 40),
-                   Player("Player2", "WSH", "Forward", 25, 20),
-                   ]
-        sorted_players = Analyzer.sort_players_by_stat(players, 'penalty_minutes')
-        self.assertEqual(sorted_players[0].name, "Player2")
-
-    def test_unique_teams(self):
-        players = [Player("Player1", "COL", "Forward", 30, 40),
-                   Player("Player2", "PIT", "Forward", 25, 20),
-                   
-                   ]
-        unique_teams = Analyzer.unique_teams(players)
-        self.assertEqual(len(unique_teams), 2)
-
-    def analyze_skaters(self, skaters_data):
-            skaters_df = DataHandler.read_skaters_data(skaters_data)
-            forwards = DataHandler.filter_skaters_by_position(skaters_df, 'Forward')
-            top_forwards = DataHandler.top_players_by_points(forwards, num_players=5)
-            return top_forwards
-
-    def analyze_goalies(self, goalies_data):
-        goalies_df = DataHandler.read_goalies_data(goalies_data)
-        top_goalies = DataHandler.top_goalies_by_save_percentage(goalies_df, num_goalies=3)
-        return top_goalies
-
-#module 7
 class Goalie(Player):
+    """
+    A class that represents an NHL goalie.
+
+    Attributes:
+    - name (str): The name of the goalie.
+    - country (str): The country of origin of the goalie.
+    - saves (int): The number of saves made by the goalie.
+    - goals_allowed (int): The number of goals allowed by the goalie.
+
+    Methods:
+    - None
+    """
+
     def __init__(self, name, country, saves, goals_allowed):
+        """
+        Initializes a Goalie object.
+
+        Parameters:
+        - name (str): The name of the goalie.
+        - country (str): The country of origin of the goalie.
+        - saves (int): The number of saves made by the goalie.
+        - goals_allowed (int): The number of goals allowed by the goalie.
+
+        Returns:
+        None
+        """
+        # Call the constructor of the parent class (Player) with specific goalie attributes
         super().__init__(name, country, position="Goalie", goals=0, penalty_minutes=0)
+        # Set additional attributes specific to Goalie
         self.saves = saves
         self.goals_allowed = goals_allowed
 
-#module 8
-class DataHandler:
+
+class Team:
+    """
+    A class for handling NHL team-related functionalities.
+
+    Methods:
+    - extract_team_code(player_info): Extracts the team code from player information.
+
+    Attributes:
+    - None
+    """
 
     def extract_team_code(player_info):
+        """
+        Extracts the team code from player information.
+
+        Parameters:
+        - player_info (str): Player information containing the team code in parentheses.
+
+        Returns:
+        - str: The extracted team code if found, or None if not found.
+        """
+        # Use a regular expression to search for a team code in parentheses
         match = re.search(r'\(([A-Z]+)\)', player_info)
         if match:
+            # If a match is found, return the extracted team code
             return match.group(1)
-        return None
+        else:
+            # If no match is found, return None
+            return None
+
 
 #module 9 - GIT Hub. I am incoperating this module by uplaoding my progress and final into git hub
 
-#module 10
+
 class DataHandler:
+    """
+    A class for handling NHL data and creating Pandas DataFrames.
+
+    Methods:
+    - create_dataframe(players): Creates a Pandas DataFrame from a list of player objects.
+
+    Attributes:
+    - None
+    """
+
     def create_dataframe(players):
+        """
+        Creates a Pandas DataFrame from a list of player objects.
+
+        Parameters:
+        - players (list): A list of Player objects.
+
+        Returns:
+        - pandas.DataFrame: A DataFrame containing player data.
+        """
+        # Use Pandas to create a DataFrame from the list of player objects
         return pd.DataFrame(players)
 
-#module 11
+
 class SQL:
+    """
+    A class for handling SQL operations related to NHL player data.
+
+    Methods:
+    - create_database(players): Creates an SQLite database and inserts player data.
+
+    Attributes:
+    - None
+    """
+
     def create_database(players):
+        """
+        Creates an SQLite database and inserts player data.
+
+        Parameters:
+        - players (list): A list of Player objects.
+
+        Returns:
+        - None
+        """
+        # Connect to the SQLite database (or create if it doesn't exist)
         conn = sqlite3.connect('nhl_players.db')
+        # Create a cursor to execute SQL commands
         c = conn.cursor()
 
-        c.execute('CREATE TABLE IF NOT EXISTS players (name TEXT, country TEXT, position TEXT, goals INTEGER, penalty_minutes INTEGER)')
-        
-        for player in players:
-            c.execute('INSERT INTO players VALUES (?, ?, ?, ?, ?)', (player.name, player.country, player.position, player.goals, player.penalty_minutes))
+        # Create a table if it doesn't exist with columns: name, team, position, goals, penalty_minutes
+        c.execute('CREATE TABLE IF NOT EXISTS players (name TEXT, team TEXT, position TEXT, goals INTEGER, penalty_minutes INTEGER)')
 
+        # Insert player data into the 'players' table
+        for player in players:
+            c.execute('INSERT INTO players VALUES (?, ?, ?, ?, ?)', (player.name, player.team, player.position, player.goals, player.penalty_minutes))
+
+        # Commit the changes to the database and close the connection
         conn.commit()
         conn.close()
 
+
 def goal_scorers_analysis(sdf, num):
-    players=PlayerHandler()
-    top_scorers = players.top_players_by_points(sdf,num)
+    """
+    Analyzes skaters' data and prints the top goal scorers.
+
+    Parameters:
+    - sdf (pandas.DataFrame): DataFrame containing skaters' data.
+    - num (int): The number of top goal scorers to display.
+
+    Returns:
+    - None
+    """
+    # Create a PlayerHandler instance
+    players = PlayerHandler()
+    # Get the top goal scorers using the PlayerHandler instance
+    top_scorers = players.top_players_by_goals(sdf, num)
+    # Sort the top scorers DataFrame by goals (G) in descending order
     sorted_top_scorers = top_scorers.sort_values(by='G', ascending=False)
+    # Print information about the top goal scorers
     print(f"\nTop {num} Goal Scorers:")
-    print(sorted_top_scorers[['Player Name', 'G']])
+    print(sorted_top_scorers[['Player Name', 'G', 'Team Name']])
 
 def goalies_analysis(gdf, num):
+    """
+    Analyzes goalies' data and prints the top goalies based on save percentage.
+
+    Parameters:
+    - gdf (pandas.DataFrame): DataFrame containing goalies' data.
+    - num (int): The number of top goalies to display.
+
+    Returns:
+    - None
+    """
+    # Create a PlayerHandler instance for goalies
     goalies = PlayerHandler()
+    # Get the top goalies based on save percentage using the PlayerHandler instance
     top_goalies = goalies.top_goalies_by_save_percentage(gdf, num)
-    print(f"\nTop {num} Goalies:")
-    print(top_goalies)
+    # Sort the top goalies DataFrame by save percentage (SV%) in descending order
+    top_goalies = top_goalies.sort_values(by='SV%', ascending=False)
+    print(top_goalies[['Player Name', 'SV%', 'Team Name']])
 
-def team_analysis(sdf, gdf):
-    team = PlayerHandler()
-    team_name = input("Enter the team name: ")
-    team_players = team.filter_players_by_team(sdf, team_name)
-    team_goalies = team.filter_goalies_by_team(gdf, team_name)
+def hitters_analysis(sdf, num):
+    """
+    Analyzes skaters' data and prints the top hitters.
 
-    print(f"\nPlayers from {team_name}:")
-    print(team_players)
+    Parameters:
+    - sdf (pandas.DataFrame): DataFrame containing skaters' data.
+    - num (int): The number of top hitters to display.
 
-    print(f"\nGoalies from {team_name}:")
-    print(team_goalies)
-
-def hitters_analysis(sdf):
+    Returns:
+    - None
+    """
+    # Create a PlayerHandler instance
     hitters = PlayerHandler()
-    top_hitters = hitters.top_players_by_stat(sdf, 'Hits', num_players=10)
+    # Get the top hitters using the PlayerHandler instance
+    top_hitters = hitters.top_players_by_hits(sdf, num)
+    # Print information about the top hitters
     print("\nTop Hitters:")
-    print(top_hitters)
+    print(top_hitters[['Player Name', 'Hits', 'Team Name']])
 
-def penalty_minutes_analysis(sdf):
+def penalty_minutes_analysis(sdf, num):
+    """
+    Analyzes skaters' data and prints players with the highest penalty minutes.
+
+    Parameters:
+    - sdf (pandas.DataFrame): DataFrame containing skaters' data.
+    - num (int): The number of players with the highest penalty minutes to display.
+
+    Returns:
+    - None
+    """
+    # Create a PlayerHandler instance
     penalty = PlayerHandler()
-    top_penalty_minutes = penalty.top_players_by_stat(sdf, 'PIM', num_players=10)
+    # Get players with the highest penalty minutes using the PlayerHandler instance
+    top_penalty_minutes = penalty.top_players_by_pim(sdf, num)
+    # Print information about players with the highest penalty minutes
     print("\nPlayers with the Highest Penalty Minutes:")
-    print(top_penalty_minutes)
+    print(top_penalty_minutes[['Player Name', 'PIM', 'Team Name']])
 
 def skaters_analysis(sdf):
+    """
+    Analyzes skaters' data and prints the top 10 goal scorers.
+
+    Parameters:
+    - sdf (pandas.DataFrame): DataFrame containing skaters' data.
+
+    Returns:
+    - None
+    """
+    # Create a PlayerHandler instance
     skaters = PlayerHandler()
+    # Create a copy of the skaters' DataFrame
     skaters_df = sdf.copy()
+    # Calculate points by adding goals (G) and assists (A)
     skaters_df['Points'] = skaters_df['G'] + skaters_df['A']
+    # Get the top 10 goal scorers based on points
     top_goal_scorers = skaters_df.sort_values(by='Points', ascending=False).head(10)
+    # Print information about the top 10 goal scorers
     print("\nTop 10 Goal Scorers:")
     print(top_goal_scorers[['Player Name', 'Points']])
 
 def parse_args(arglist):
+    """
+    Parses command-line arguments for the NHL Stats Analyzer.
+
+    Parameters:
+    - arglist (list): List of command-line arguments.
+
+    Returns:
+    - Namespace: An object containing attributes corresponding to the command-line arguments.
+    """
+    # Create an ArgumentParser instance with a description
     parser = ArgumentParser(description="NHL Stats Analyzer")
-    parser.add_argument('-tgs', '--topgoalscorers', nargs=1, type=int, help = "Show Top Goal Scorers (include n scorers)")
-    parser.add_argument('-bg', '--bestgoalies', nargs=1, type=int, help = "Show Best Goalies (include n goalies)")
+    
+    # Add command-line arguments for different analysis options
+    parser.add_argument('-tgs', '--topgoalscorers', nargs=1, type=int, help="Show Top Goal Scorers (include n scorers)")
+    parser.add_argument('-bg', '--bestgoalies', nargs=1, type=int, help="Show Best Goalies (include n goalies)")
+    parser.add_argument('-bh', '--biggesthitters', nargs=1, type=int, help="Show Biggest Hitters (include n hitters)")
+    parser.add_argument('-pm', '--penaltyminutes', nargs=1, type=int, help="Show Players With Highest Penalty Minutes")
+    
+    # Parse the command-line arguments and return the result
     return parser.parse_args(arglist)
 
-
-#module 12
 if __name__ == "__main__":
+    # Parse command-line arguments
     args = parse_args(sys.argv[1:])
 
-    # create a pandas data frame for the skaters data
-    skaters_df = pd.read_csv("nhl-stats_1.csv",skiprows=1)
-    # create a pandas data frame for the goalies data
-    goalies_df = pd.read_csv("nhl-stats_2.csv",skiprows=1)
+    # Read skaters data from CSV file and add 'Team Name' column
+    skaters_df = pd.read_csv("nhl-stats_1.csv", skiprows=1)
+    skaters_df['Team Name'] = skaters_df['Team'].map(nhl_teams)
 
+    # Read goalies data from CSV file and add 'Team Name' column
+    goalies_df = pd.read_csv("nhl-stats_2.csv", skiprows=1)
+    goalies_df['Team Name'] = goalies_df['Team'].map(nhl_teams)
+
+    # Perform analysis based on user's command-line arguments
     if args.topgoalscorers:
         num = args.topgoalscorers[0]
         print(f"Processing Top {num} Goal Scorers...")
@@ -404,8 +461,14 @@ if __name__ == "__main__":
     elif args.bestgoalies:
         num = args.bestgoalies[0]
         print(f"Processing Best {num} Goalies...")
-        goalies_analysis(goalies_df)
-    
+        goalies_analysis(goalies_df, num)
+    elif args.biggesthitters:
+        num = args.biggesthitters[0]
+        print("Processing Biggest Hitters...")
+        hitters_analysis(skaters_df, num)
+    elif args.penaltyminutes:
+        num = args.penaltyminutes[0]
+        print("Processing Penalty Minutes Analysis...")
+        penalty_minutes_analysis(skaters_df, num)
     else:
         print("Invalid choice. Please select a valid option.")
-
